@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import * as XLSX from "xlsx";
 import { getAnalytics, searchTenders } from "@/lib/queries";
+import { siteUrl } from "@/lib/site";
 import { parseFilters, type RawParams } from "@/lib/params";
 import { formatDate, methodLabel, statusMeta } from "@/lib/format";
 
@@ -85,7 +86,7 @@ export async function GET(request: Request) {
     КПВ: t.cpv,
     "Категорія КПВ": t.cpv_name,
     Створено: formatDate(t.date_created),
-    Посилання: `${process.env.SITE_URL || "http://localhost:3000"}/tenders/${t.id}`,
+    Посилання: `${siteUrl}/tenders/${t.id}`,
   }));
 
   if (format === "xlsx") {

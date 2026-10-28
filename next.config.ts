@@ -12,6 +12,9 @@ const nextConfig: NextConfig = {
   experimental: {
     optimizePackageImports: ["lucide-react"],
   },
+  outputFileTracingIncludes: {
+    "/**": ["./data/clarity.db"],
+  },
 };
 
 export default nextConfig;

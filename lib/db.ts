@@ -1,13 +1,64 @@
 import { DatabaseSync } from "node:sqlite";
+import { chmodSync, copyFileSync, existsSync, statSync } from "node:fs";
+import { tmpdir } from "node:os";
 import path from "node:path";
 
 const globalForDb = globalThis as unknown as { __vidkrytoDb?: DatabaseSync };
 
+function open(file: string): DatabaseSync {
+  const db = new DatabaseSync(file);
+  db.exec("PRAGMA busy_timeout = 5000;");
+  try {
+    db.exec("PRAGMA journal_mode = WAL; PRAGMA synchronous = NORMAL;");
+  } catch {
+    // Read-only filesystem: WAL is optional, the database still opens.
+  }
+  return db;
+}
+
+function probeWrite(db: DatabaseSync): void {
+  db.exec("CREATE TABLE IF NOT EXISTS _vidkryto_probe (x INTEGER); DROP TABLE IF EXISTS _vidkryto_probe;");
+}
+
+function prepareWritableCopy(source: string): string {
+  const target = path.join(tmpdir(), "vidkryto-clarity.db");
+  if (!existsSync(target) || statSync(target).size !== statSync(source).size) {
+    copyFileSync(source, target);
+  }
+  try {
+    chmodSync(target, 0o600);
+  } catch {
+    // Best effort; some runtimes ignore chmod.
+  }
+  return target;
+}
+
+/**
+ * Opens the local SQLite snapshot.
+ *
+ * Serverless platforms mount the deployment read-only. A writable copy is made
+ * in the temp directory so that auth, saved searches and sync keep working for
+ * the lifetime of the function instance.
+ */
 export function getDb(): DatabaseSync {
   if (globalForDb.__vidkrytoDb) return globalForDb.__vidkrytoDb;
   const file = process.env.DB_FILE || path.join(process.cwd(), "data", "clarity.db");
-  const db = new DatabaseSync(file);
-  db.exec("PRAGMA journal_mode = WAL; PRAGMA busy_timeout = 5000; PRAGMA synchronous = NORMAL;");
+  const serverless = Boolean(
+    process.env.NETLIFY || process.env.AWS_LAMBDA_FUNCTION_NAME || process.env.VERCEL,
+  );
+
+  let db: DatabaseSync;
+  if (serverless) {
+    db = open(prepareWritableCopy(file));
+  } else {
+    try {
+      db = open(file);
+      probeWrite(db);
+    } catch {
+      db = open(prepareWritableCopy(file));
+    }
+  }
+
   globalForDb.__vidkrytoDb = db;
   return db;
 }

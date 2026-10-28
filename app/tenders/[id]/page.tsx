@@ -15,6 +15,7 @@ import {
   Users,
 } from "lucide-react";
 import { getRelatedTenders, getTender } from "@/lib/queries";
+import { siteUrl } from "@/lib/site";
 import {
   formatDate,
   formatDateTime,
@@ -204,7 +205,7 @@ export default async function TenderPage({ params }: { params: Promise<{ id: str
               <div className="mt-5 flex flex-wrap items-center gap-3 border-t border-line pt-4">
                 <span className="mono text-[11px] text-muted-2">{tender.tender_id}</span>
                 <CopyButton value={tender.tender_id} label="Копіювати ID" />
-                <CopyButton value={`${process.env.SITE_URL || "http://localhost:3000"}/tenders/${tender.id}`} label="Копіювати посилання" />
+                <CopyButton value={`${siteUrl}/tenders/${tender.id}`} label="Копіювати посилання" />
                 <a
                   href={`https://prozorro.gov.ua/tender/${tender.tender_id}`}
                   target="_blank"

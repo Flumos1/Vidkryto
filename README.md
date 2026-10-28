@@ -76,6 +76,26 @@ scripts/seed.mjs     завантаження даних з ProZorro
 data/clarity.db      SQLite-знімок (створюється сідом)
 ```
 
+## Деплой на Netlify Drop
+
+Готовий архів: `dist/vidkryto-netlify.zip` (~15 МБ).
+
+1. Відкрийте [app.netlify.com/drop](https://app.netlify.com/drop).
+2. Перетягніть zip-архів (не розпаковуйте). Netlify виконає
+   `node scripts/assemble-db.mjs && npm run build`.
+3. Дочекайтеся збірки та отримайте URL `*.netlify.app`.
+4. За бажанням задайте `AUTH_SECRET` у Site settings → Environment variables.
+
+Як це працює: база розбита на частини `data/clarity.db.partNN` (менше 10 МБ),
+які складаються під час збірки. На serverless диск доступний лише для читання,
+тому застосунок копіює БД у `/tmp` і працює з копією.
+
+Обмеження Netlify: записи (реєстрація, підписки, синхронізація) живуть у `/tmp`
+конкретного інстансу й можуть скидатися після cold start. Для постійного
+зберігання використовуйте Railway/Render/VPS або Turso.
+
+Повний сайт на VPS: `npm ci && npm run seed && npm run build && npm start`.
+
 ## Дані та обмеження
 
 - Безкоштовний API ProZorro не підтримує фільтри за датами, тому знімок формується з
