@@ -1,4 +1,5 @@
 import { getDb } from "./db";
+import { normalizeEntityName } from "./sanctions";
 
 export type TenderRow = {
   id: string;
@@ -663,8 +664,94 @@ export function getPriceBenchmarks(): {
   }
 }
 
-export function getSyncInfo(): { lastSeed: string | null; count: number } {
+export type SanctionRow = {
+  id: string;
+  source: string;
+  entity_type: string;
+  name: string;
+  normalized_name: string;
+  aliases_json: string | null;
+  program: string | null;
+  country: string | null;
+  dob: string | null;
+  address: string | null;
+  comments: string | null;
+  listed_at: string | null;
+  source_url: string | null;
+  updated_at: string | null;
+};
+
+export function getSanctionsStats(): {
+  count: number;
+  organizations: number;
+  persons: number;
+  updatedAt: string | null;
+} {
   try {
+    const db = getDb();
+    const total = db.prepare("SELECT COUNT(*) AS n FROM sanctions").get() as { n: number };
+    const orgs = db
+      .prepare("SELECT COUNT(*) AS n FROM sanctions WHERE entity_type = 'organization'")
+      .get() as { n: number };
+    const persons = db
+      .prepare("SELECT COUNT(*) AS n FROM sanctions WHERE entity_type = 'person'")
+      .get() as { n: number };
+    const updated = db
+      .prepare("SELECT value FROM sync_state WHERE key = 'sanctions_updated'")
+      .get() as { value: string } | undefined;
+    return { count: total.n, organizations: orgs.n, persons: persons.n, updatedAt: updated?.value || null };
+  } catch {
+    return { count: 0, organizations: 0, persons: 0, updatedAt: null };
+  }
+}
+
+export function searchSanctions(opts: {
+  q?: string;
+  type?: string;
+  page?: number;
+  perPage?: number;
+}): { rows: SanctionRow[]; total: number; page: number; pages: number } {
+  try {
+    const db = getDb();
+    const page = Math.max(1, opts.page || 1);
+    const perPage = Math.min(100, Math.max(1, opts.perPage || 40));
+    const where: string[] = ["1 = 1"];
+    const params: string[] = [];
+    if (opts.q) {
+      where.push("normalized_name LIKE ?");
+      params.push(`%${normalizeEntityName(opts.q)}%`);
+    }
+    if (opts.type === "organization" || opts.type === "person") {
+      where.push("entity_type = ?");
+      params.push(opts.type);
+    }
+    const sql = where.join(" AND ");
+    const total = (
+      db.prepare(`SELECT COUNT(*) AS n FROM sanctions WHERE ${sql}`).get(...params) as { n: number }
+    ).n;
+    const rows = db
+      .prepare(`SELECT * FROM sanctions WHERE ${sql} ORDER BY name ASC LIMIT ? OFFSET ?`)
+      .all(...params, perPage, (page - 1) * perPage) as unknown as SanctionRow[];
+    return { rows, total, page, pages: Math.max(1, Math.ceil(total / perPage)) };
+  } catch {
+    return { rows: [], total: 0, page: 1, pages: 1 };
+  }
+}
+
+export function getSanctionsMatches(name: string): SanctionRow[] {
+  const normalized = normalizeEntityName(name);
+  if (!normalized) return [];
+  try {
+    const db = getDb();
+    return db
+      .prepare("SELECT * FROM sanctions WHERE normalized_name = ? ORDER BY name LIMIT 5")
+      .all(normalized) as unknown as SanctionRow[];
+  } catch {
+    return [];
+  }
+}
+
+export function getSyncInfo(): { lastSeed: string | null; count: number } {  try {
     const db = getDb();
     const seed = db.prepare(`SELECT value FROM sync_state WHERE key = 'last_seed'`).get() as
       | { value: string }

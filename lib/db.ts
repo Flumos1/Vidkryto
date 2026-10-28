@@ -20,6 +20,42 @@ function probeWrite(db: DatabaseSync): void {
   db.exec("CREATE TABLE IF NOT EXISTS _vidkryto_probe (x INTEGER); DROP TABLE IF EXISTS _vidkryto_probe;");
 }
 
+function ensureOptionalSchema(db: DatabaseSync): void {
+  try {
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS sanctions (
+        id TEXT PRIMARY KEY,
+        source TEXT NOT NULL,
+        entity_type TEXT NOT NULL,
+        name TEXT NOT NULL,
+        normalized_name TEXT NOT NULL,
+        aliases_json TEXT,
+        program TEXT,
+        country TEXT,
+        dob TEXT,
+        address TEXT,
+        comments TEXT,
+        listed_at TEXT,
+        source_url TEXT,
+        updated_at TEXT
+      );
+      CREATE INDEX IF NOT EXISTS idx_sanctions_norm ON sanctions(normalized_name);
+      CREATE INDEX IF NOT EXISTS idx_sanctions_type ON sanctions(entity_type);
+      CREATE TABLE IF NOT EXISTS ingest_runs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        source TEXT NOT NULL,
+        started_at TEXT NOT NULL,
+        finished_at TEXT,
+        status TEXT NOT NULL,
+        rows INTEGER DEFAULT 0,
+        message TEXT
+      );
+    `);
+  } catch {
+    // Read-only database without a writable copy: queries degrade gracefully.
+  }
+}
+
 function prepareWritableCopy(source: string): string {
   const target = path.join(tmpdir(), "vidkryto-clarity.db");
   if (!existsSync(target) || statSync(target).size !== statSync(source).size) {
@@ -60,6 +96,7 @@ export function getDb(): DatabaseSync {
   }
 
   globalForDb.__vidkrytoDb = db;
+  ensureOptionalSchema(db);
   return db;
 }
 

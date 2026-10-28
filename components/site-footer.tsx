@@ -11,6 +11,7 @@ const columns: {
       { href: "/tenders", label: "Закупівлі" },
       { href: "/analytics", label: "Аналітика" },
       { href: "/companies", label: "Компанії" },
+      { href: "/sanctions", label: "Санкції" },
       { href: "/prices", label: "Ціни" },
       { href: "/auctions", label: "Аукціони" },
     ],

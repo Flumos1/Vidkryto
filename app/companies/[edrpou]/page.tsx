@@ -7,6 +7,8 @@ import {
   FileText,
   MapPin,
   Percent,
+  ShieldAlert,
+  ShieldCheck,
   Trophy,
 } from "lucide-react";
 import {
@@ -14,6 +16,8 @@ import {
   getCompanyCounterparties,
   getCompanyCpv,
   getCompanyTenders,
+  getSanctionsMatches,
+  getSanctionsStats,
 } from "@/lib/queries";
 import {
   cpvSectionName,
@@ -51,6 +55,8 @@ export default async function CompanyPage({ params }: { params: Promise<{ edrpou
   const tenders = getCompanyTenders(edrpou, 30);
   const cpv = getCompanyCpv(edrpou);
   const counterparties = getCompanyCounterparties(edrpou, 6);
+  const sanctions = getSanctionsMatches(company.name);
+  const sanctionsStats = getSanctionsStats();
   const winRate = company.tenders ? (company.wins / company.tenders) * 100 : 0;
   const maxCpv = Math.max(1, ...cpv.map((c) => c.amount));
 
@@ -226,6 +232,63 @@ export default async function CompanyPage({ params }: { params: Promise<{ edrpou
               </div>
             </div>
           )}
+
+          <div
+            className={`rounded-2xl border p-5 ${
+              sanctions.length > 0 ? "border-danger/40 bg-danger-soft" : "border-line bg-panel"
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              {sanctions.length > 0 ? (
+                <ShieldAlert className="h-4 w-4 text-danger" />
+              ) : (
+                <ShieldCheck className="h-4 w-4 text-success" />
+              )}
+              <p className="eyebrow">Санкційна перевірка</p>
+            </div>
+            {sanctions.length > 0 ? (
+              <div className="mt-3 space-y-2">
+                <p className="text-[12.5px] font-semibold text-danger">
+                  Знайдено в переліку санкцій
+                </p>
+                {sanctions.map((s) => (
+                  <a
+                    key={s.id}
+                    href={s.source_url || "/sanctions"}
+                    target="_blank"
+                    rel="noreferrer noopener"
+                    className="block rounded-lg border border-danger/20 bg-panel/60 p-2.5"
+                  >
+                    <p className="text-[11.5px] font-semibold text-ink-soft">{s.name}</p>
+                    <p className="mt-0.5 text-[10px] text-muted">
+                      {s.entity_type === "organization" ? "організація" : "особа"}
+                      {s.listed_at ? ` · з ${formatDate(s.listed_at)}` : ""}
+                    </p>
+                    {s.program && (
+                      <p className="mt-1 line-clamp-2 text-[10px] text-muted-2">{s.program}</p>
+                    )}
+                  </a>
+                ))}
+              </div>
+            ) : (
+              <p className="mt-3 text-[12px] leading-relaxed text-muted">
+                Збігів за назвою не знайдено. Це не є юридичним висновком — перевіряйте
+                ідентифікатори та першоджерело.
+              </p>
+            )}
+            <div className="mt-3 flex items-center justify-between border-t border-line pt-3">
+              <span className="text-[10px] text-muted-2">
+                {formatNumber(sanctionsStats.count)} записів
+                {sanctionsStats.updatedAt ? ` · ${formatDate(sanctionsStats.updatedAt)}` : ""}
+              </span>
+              <Link
+                href={`/sanctions?q=${encodeURIComponent(company.name)}`}
+                className="text-[10.5px] font-semibold text-accent"
+              >
+                Реєстр →
+              </Link>
+            </div>
+          </div>
 
           <div className="rounded-2xl border border-line bg-panel-2 p-5 text-[11.5px] leading-relaxed text-muted">
             <p className="mb-2 font-semibold text-ink">Про дані</p>
