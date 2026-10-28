@@ -18,6 +18,7 @@ import {
   getCompany,
   getCompanyCounterparties,
   getCompanyCpv,
+  getCompanyRelations,
   getCompanyTenders,
   getSanctionsMatches,
   getSanctionsStats,
@@ -59,6 +60,7 @@ export default async function CompanyPage({ params }: { params: Promise<{ edrpou
   const tenders = getCompanyTenders(edrpou, 30);
   const cpv = getCompanyCpv(edrpou);
   const counterparties = getCompanyCounterparties(edrpou, 6);
+  const relations = getCompanyRelations(edrpou, 6);
   const sanctions = getSanctionsMatches(company.name);
   const sanctionsStats = getSanctionsStats();
   const amku = getAmkuViolations(company.edrpou);
@@ -408,6 +410,34 @@ export default async function CompanyPage({ params }: { params: Promise<{ edrpou
               </a>
             </div>
           </div>
+
+          {relations.length > 0 && (
+            <div className="rounded-2xl border border-line bg-panel p-5">
+              <p className="eyebrow">Пов&apos;язані компанії</p>
+              <div className="mt-3 space-y-2">
+                {relations.map((relation) => (
+                  <Link
+                    key={`${relation.edrpou}-${relation.kind}`}
+                    href={`/companies/${relation.edrpou}`}
+                    className="block rounded-lg border border-line bg-panel-2 p-2.5 hover:border-line-strong"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <p className="line-clamp-2 text-[11.5px] font-semibold">{relation.name}</p>
+                      <span className="mono shrink-0 rounded bg-panel px-1.5 py-0.5 text-[9.5px] text-muted">
+                        {relation.shared}
+                      </span>
+                    </div>
+                    <p className="mt-0.5 text-[10px] text-muted-2">
+                      {relation.kind === "co_bid" ? "спільні торги" : "замовник ↔ постачальник"}
+                    </p>
+                  </Link>
+                ))}
+              </div>
+              <p className="mt-3 text-[10px] leading-relaxed text-muted-2">
+                Зв&apos;язки за спільними закупівлями. Не є підтвердженням афілійованості.
+              </p>
+            </div>
+          )}
 
           <div className="rounded-2xl border border-line bg-panel-2 p-5 text-[11.5px] leading-relaxed text-muted">
             <p className="mb-2 font-semibold text-ink">Про дані</p>

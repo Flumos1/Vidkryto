@@ -67,6 +67,16 @@ function ensureOptionalSchema(db: DatabaseSync): void {
         updated_at TEXT
       );
       CREATE INDEX IF NOT EXISTS idx_amku_edrpou ON amku_violations(edrpou);
+      CREATE TABLE IF NOT EXISTS company_relations (
+        a TEXT NOT NULL,
+        b TEXT NOT NULL,
+        kind TEXT NOT NULL,
+        shared INTEGER NOT NULL DEFAULT 0,
+        last_date TEXT,
+        PRIMARY KEY (a, b, kind)
+      );
+      CREATE INDEX IF NOT EXISTS idx_relations_a ON company_relations(a);
+      CREATE INDEX IF NOT EXISTS idx_relations_b ON company_relations(b);
     `);
   } catch {
     // Read-only database without a writable copy: queries degrade gracefully.

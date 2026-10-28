@@ -37,7 +37,11 @@ const columns: {
   },
 ];
 
-export function SiteFooter() {
+export function SiteFooter({
+  freshness,
+}: {
+  freshness?: { label: string; status: string; title: string };
+}) {
   return (
     <footer className="relative mt-24 overflow-hidden border-t border-line bg-bg-soft">
       <div className="container-x relative z-10 py-16">
@@ -48,11 +52,14 @@ export function SiteFooter() {
               Аналітична платформа публічних закупівель. Пошук, ціни, контрагенти та API на
               основі відкритих даних.
             </p>
-            <div className="mt-6 inline-flex items-center gap-2 rounded-full border border-line bg-panel px-3 py-1.5 text-[11px] text-muted">
+            <div
+              className="mt-6 inline-flex items-center gap-2 rounded-full border border-line bg-panel px-3 py-1.5 text-[11px] text-muted"
+              title={freshness?.title}
+            >
               <span className="relative flex h-1.5 w-1.5">
                 <span className="pulse-dot absolute inline-flex h-1.5 w-1.5 rounded-full bg-success" />
               </span>
-              Дані оновлюються з ProZorro
+              Оновлено {freshness?.label ?? "—"}
             </div>
           </div>
 

@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from "next";
+import Link from "next/link";
 import "./globals.css";
 import { siteUrl } from "@/lib/site";
+import { getDataFreshness } from "@/lib/queries";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 
@@ -40,6 +42,16 @@ export const viewport: Viewport = {
 const themeScript = `(function(){try{var t=localStorage.getItem('theme')||'dark';document.documentElement.dataset.theme=t}catch(e){document.documentElement.dataset.theme='dark'}})();`;
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const freshness = getDataFreshness();
+  const freshnessColor =
+    freshness.status === "fresh"
+      ? "bg-success"
+      : freshness.status === "stale"
+        ? "bg-warn"
+        : freshness.status === "old"
+          ? "bg-danger"
+          : "bg-muted-2";
+
   return (
     <html lang="uk" suppressHydrationWarning>
       <head>
@@ -58,11 +70,26 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         >
           Перейти до вмісту
         </a>
+        <div className="border-b border-line bg-panel-2">
+          <div className="container-x flex h-8 items-center justify-between gap-3 text-[10.5px] text-muted">
+            <div className="flex min-w-0 items-center gap-2">
+              <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${freshnessColor}`} />
+              <span className="truncate">Дані: ProZorro · АМКУ · Санкції</span>
+            </div>
+            <Link
+              href="/sources"
+              title={freshness.title}
+              className="shrink-0 transition-colors hover:text-ink"
+            >
+              Оновлено {freshness.label} · джерела
+            </Link>
+          </div>
+        </div>
         <SiteHeader />
         <main id="content" className="flex-1">
           {children}
         </main>
-        <SiteFooter />
+        <SiteFooter freshness={freshness} />
       </body>
     </html>
   );

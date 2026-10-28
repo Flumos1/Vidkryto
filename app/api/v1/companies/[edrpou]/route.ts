@@ -1,5 +1,5 @@
 import { apiError, apiResponse, checkApiKey, clientIp, preflight, rateLimit } from "@/lib/api";
-import { getCompany, getCompanyCounterparties, getCompanyCpv, getCompanyTenders } from "@/lib/queries";
+import { getCompany, getCompanyCounterparties, getCompanyCpv, getCompanyRelations, getCompanyTenders } from "@/lib/queries";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -21,6 +21,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ edrp
   const tenders = getCompanyTenders(edrpou, 25);
   const cpv = getCompanyCpv(edrpou);
   const counterparties = getCompanyCounterparties(edrpou, 10);
+  const relations = getCompanyRelations(edrpou, 10);
 
   return apiResponse({
     data: {
@@ -46,6 +47,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ edrp
       },
       cpv_breakdown: cpv.map((c) => ({ section: c.code, count: c.count, amount: c.amount })),
       top_buyers: counterparties,
+      relations,
       recent_tenders: tenders.map((t) => ({
         id: t.id,
         tender_id: t.tender_id,

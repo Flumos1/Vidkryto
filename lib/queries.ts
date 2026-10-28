@@ -897,6 +897,86 @@ export function searchRiskCompanies(opts: {
   }
 }
 
+export type DataFreshness = {
+  updatedAt: string | null;
+  ageHours: number;
+  status: "fresh" | "stale" | "old" | "unknown";
+  label: string;
+  title: string;
+};
+
+export function getDataFreshness(): DataFreshness {
+  try {
+    const db = getDb();
+    const rows = db
+      .prepare("SELECT key, value FROM sync_state")
+      .all() as unknown as { key: string; value: string }[];
+    const map = new Map(rows.map((row) => [row.key, row.value]));
+    const sources: { key: string; label: string; value: string }[] = [
+      { key: "last_seed", label: "ProZorro", value: map.get("last_seed") || "" },
+      { key: "last_sync", label: "Синхронізація", value: map.get("last_sync") || "" },
+      { key: "sanctions_updated", label: "Санкції", value: map.get("sanctions_updated") || "" },
+      { key: "amku_updated", label: "АМКУ", value: map.get("amku_updated") || "" },
+      { key: "relations_updated", label: "Зв'язки", value: map.get("relations_updated") || "" },
+      { key: "risk_updated", label: "Ризик-профіль", value: map.get("risk_updated") || "" },
+    ].filter((source) => source.value);
+
+    if (sources.length === 0) {
+      return { updatedAt: null, ageHours: 0, status: "unknown", label: "немає даних", title: "Дані ще не завантажені" };
+    }
+
+    const latest = sources
+      .map((source) => ({ ...source, ts: new Date(source.value).getTime() }))
+      .filter((source) => Number.isFinite(source.ts))
+      .sort((a, b) => b.ts - a.ts)[0];
+    const ageHours = latest ? Math.max(0, (Date.now() - latest.ts) / 3600000) : 0;
+    const status = ageHours < 24 ? "fresh" : ageHours < 72 ? "stale" : "old";
+    const date = latest ? new Date(latest.ts) : null;
+    const label = date
+      ? date.toLocaleString("uk-UA", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })
+      : "—";
+    const title = sources
+      .map((source) => `${source.label}: ${new Date(source.value).toLocaleString("uk-UA")}`)
+      .join(" · ");
+
+    return {
+      updatedAt: latest ? new Date(latest.ts).toISOString() : null,
+      ageHours,
+      status,
+      label,
+      title,
+    };
+  } catch {
+    return { updatedAt: null, ageHours: 0, status: "unknown", label: "—", title: "Дані недоступні" };
+  }
+}
+
+export type CompanyRelation = {
+  edrpou: string;
+  name: string;
+  kind: string;
+  shared: number;
+  last_date: string | null;
+};
+
+export function getCompanyRelations(edrpou: string, limit = 6): CompanyRelation[] {
+  try {
+    const db = getDb();
+    return db
+      .prepare(
+        `SELECT c.edrpou AS edrpou, c.name AS name, r.kind AS kind, r.shared AS shared,
+                r.last_date AS last_date
+         FROM company_relations r
+         JOIN companies c ON c.edrpou = CASE WHEN r.a = ? THEN r.b ELSE r.a END
+         WHERE (r.a = ? OR r.b = ?) AND c.kind IN ('supplier','both','buyer')
+         ORDER BY r.shared DESC, r.last_date DESC LIMIT ?`,
+      )
+      .all(edrpou, edrpou, edrpou, limit) as unknown as CompanyRelation[];
+  } catch {
+    return [];
+  }
+}
+
 export function getSyncInfo(): { lastSeed: string | null; count: number } {  try {
     const db = getDb();
     const seed = db.prepare(`SELECT value FROM sync_state WHERE key = 'last_seed'`).get() as
