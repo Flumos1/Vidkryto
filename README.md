@@ -2,6 +2,8 @@
 
 **Репозиторій:** https://github.com/Flumos1/Vidkryto
 
+[![Deploy to Netlify](https://www.netlify.com/img/deploy/button.svg)](https://app.netlify.com/start/deploy?repository=https://github.com/Flumos1/Vidkryto)
+
 Незалежна аналітична платформа для публічних закупівель України: пошук процедур
 ProZorro, аналітика ринку, цінові бенчмарки, профілі компаній, збережені пошуки,
 експорт та REST API.
