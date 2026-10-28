@@ -320,7 +320,7 @@ export default async function CompanyPage({ params }: { params: Promise<{ edrpou
                     <p className="mt-1 line-clamp-2 text-[11px] text-ink-soft">
                       {v.body || "Рішення АМКУ"}
                     </p>
-                    {v.court_decision && (
+                    {v.court_decision && v.court_decision !== "NA" && (
                       <p className="mt-1 line-clamp-2 text-[10px] text-muted">{v.court_decision}</p>
                     )}
                   </div>
