@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { ArrowUpRight, Database, RefreshCw, ShieldAlert, ShieldCheck } from "lucide-react";
-import { getSanctionsStats } from "@/lib/queries";
+import { ArrowUpRight, Database, Gavel, RefreshCw, ShieldAlert, ShieldCheck } from "lucide-react";
+import { getAmkuStats, getSanctionsStats } from "@/lib/queries";
 import { formatDate, formatNumber } from "@/lib/format";
 
 export const metadata = {
@@ -98,6 +98,7 @@ const GROUPS: { title: string; icon: string; sources: Source[] }[] = [
 export default function SourcesPage() {
   const total = GROUPS.reduce((s, g) => s + g.sources.length, 0);
   const sanctions = getSanctionsStats();
+  const amku = getAmkuStats();
   return (
     <div className="container-x py-10 lg:py-14">
       <div className="grid gap-8 lg:grid-cols-[1fr_auto] lg:items-end">
@@ -155,6 +156,31 @@ export default function SourcesPage() {
           <Link href="/sanctions" className="btn btn-ghost btn-sm shrink-0">
             Відкрити реєстр <ArrowUpRight className="h-3.5 w-3.5" />
           </Link>
+        </div>
+      )}
+
+      {amku.count > 0 && (
+        <div className="mt-4 flex flex-col gap-4 rounded-2xl border border-line bg-panel p-5 md:flex-row md:items-center md:justify-between">
+          <div className="flex items-start gap-3">
+            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-warn-soft text-warn">
+              <Gavel className="h-5 w-5" />
+            </span>
+            <div>
+              <p className="text-[13px] font-bold">Рішення АМКУ — уже в базі</p>
+              <p className="mt-0.5 text-[11.5px] text-muted">
+                {formatNumber(amku.count)} рішень · {formatNumber(amku.companies)} компаній
+                {amku.updatedAt ? ` · оновлено ${formatDate(amku.updatedAt)}` : ""}
+              </p>
+            </div>
+          </div>
+          <a
+            href="https://data.gov.ua/dataset/1b98d102-0b52-44ba-882f-5f6a559ff81c"
+            target="_blank"
+            rel="noreferrer noopener"
+            className="btn btn-ghost btn-sm shrink-0"
+          >
+            Джерело <ArrowUpRight className="h-3.5 w-3.5" />
+          </a>
         </div>
       )}
 

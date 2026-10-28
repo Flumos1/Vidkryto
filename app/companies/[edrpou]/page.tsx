@@ -5,6 +5,7 @@ import {
   ArrowUpRight,
   Building2,
   FileText,
+  Gavel,
   MapPin,
   Percent,
   ShieldAlert,
@@ -12,6 +13,8 @@ import {
   Trophy,
 } from "lucide-react";
 import {
+  getAmkuStats,
+  getAmkuViolations,
   getCompany,
   getCompanyCounterparties,
   getCompanyCpv,
@@ -57,6 +60,8 @@ export default async function CompanyPage({ params }: { params: Promise<{ edrpou
   const counterparties = getCompanyCounterparties(edrpou, 6);
   const sanctions = getSanctionsMatches(company.name);
   const sanctionsStats = getSanctionsStats();
+  const amku = getAmkuViolations(company.edrpou);
+  const amkuStats = getAmkuStats();
   const winRate = company.tenders ? (company.wins / company.tenders) * 100 : 0;
   const maxCpv = Math.max(1, ...cpv.map((c) => c.amount));
 
@@ -287,6 +292,57 @@ export default async function CompanyPage({ params }: { params: Promise<{ edrpou
               >
                 Реєстр →
               </Link>
+            </div>
+          </div>
+
+          <div
+            className={`rounded-2xl border p-5 ${
+              amku.length > 0 ? "border-warn/40 bg-warn-soft" : "border-line bg-panel"
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              <Gavel className={`h-4 w-4 ${amku.length > 0 ? "text-warn" : "text-muted"}`} />
+              <p className="eyebrow">Порушення АМКУ</p>
+            </div>
+            {amku.length > 0 ? (
+              <div className="mt-3 space-y-2">
+                <p className="text-[12.5px] font-semibold text-warn">
+                  Є рішення про спотворення результатів торгів
+                </p>
+                {amku.map((v) => (
+                  <div
+                    key={v.id}
+                    className="rounded-lg border border-warn/20 bg-panel/60 p-2.5"
+                  >
+                    <p className="mono text-[10px] text-muted-2">
+                      № {v.decision_number || "—"} · {formatDate(v.decision_date)}
+                    </p>
+                    <p className="mt-1 line-clamp-2 text-[11px] text-ink-soft">
+                      {v.body || "Рішення АМКУ"}
+                    </p>
+                    {v.court_decision && (
+                      <p className="mt-1 line-clamp-2 text-[10px] text-muted">{v.court_decision}</p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="mt-3 text-[12px] leading-relaxed text-muted">
+                У зведених відомостях АМКУ рішень щодо цього ЄДРПОУ не знайдено.
+              </p>
+            )}
+            <div className="mt-3 flex items-center justify-between border-t border-line pt-3">
+              <span className="text-[10px] text-muted-2">
+                {formatNumber(amkuStats.count)} рішень · {formatNumber(amkuStats.companies)} компаній
+              </span>
+              <a
+                href="https://data.gov.ua/dataset/1b98d102-0b52-44ba-882f-5f6a559ff81c"
+                target="_blank"
+                rel="noreferrer noopener"
+                className="text-[10.5px] font-semibold text-accent"
+              >
+                АМКУ ↗
+              </a>
             </div>
           </div>
 

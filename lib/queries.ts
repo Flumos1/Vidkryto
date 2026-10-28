@@ -751,6 +751,56 @@ export function getSanctionsMatches(name: string): SanctionRow[] {
   }
 }
 
+export type AmkuViolation = {
+  id: string;
+  edrpou: string;
+  company_name: string | null;
+  decision_number: string | null;
+  decision_date: string | null;
+  body: string | null;
+  court_case: string | null;
+  court_name: string | null;
+  court_date: string | null;
+  court_decision: string | null;
+  review_decision: string | null;
+  notes: string | null;
+  source_url: string | null;
+  updated_at: string | null;
+};
+
+export function getAmkuStats(): {
+  count: number;
+  companies: number;
+  updatedAt: string | null;
+} {
+  try {
+    const db = getDb();
+    const row = db
+      .prepare("SELECT COUNT(*) AS n, COUNT(DISTINCT edrpou) AS companies FROM amku_violations")
+      .get() as { n: number; companies: number };
+    const updated = db
+      .prepare("SELECT value FROM sync_state WHERE key = 'amku_updated'")
+      .get() as { value: string } | undefined;
+    return { count: row.n, companies: row.companies, updatedAt: updated?.value || null };
+  } catch {
+    return { count: 0, companies: 0, updatedAt: null };
+  }
+}
+
+export function getAmkuViolations(edrpou: string, limit = 4): AmkuViolation[] {
+  try {
+    const db = getDb();
+    return db
+      .prepare(
+        `SELECT * FROM amku_violations WHERE edrpou = ?
+         ORDER BY decision_date DESC NULLS LAST LIMIT ?`,
+      )
+      .all(String(edrpou).replace(/\D/g, ""), limit) as unknown as AmkuViolation[];
+  } catch {
+    return [];
+  }
+}
+
 export function getSyncInfo(): { lastSeed: string | null; count: number } {  try {
     const db = getDb();
     const seed = db.prepare(`SELECT value FROM sync_state WHERE key = 'last_seed'`).get() as
