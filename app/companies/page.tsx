@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowUpRight, Building2, MapPin, Trophy } from "lucide-react";
+import { ArrowUpRight, Building2, MapPin, ShieldAlert, Trophy } from "lucide-react";
 import { searchCompanies } from "@/lib/queries";
 import { first, type RawParams } from "@/lib/params";
 import { formatMoney, formatNumber, initials, timeAgo } from "@/lib/format";
@@ -58,6 +58,9 @@ export default async function CompaniesPage({
           Замовники й учасники закупівель: історія участі, перемоги, суми та географія
           роботи. Пошук за назвою або кодом ЄДРПОУ.
         </p>
+        <Link href="/companies/risk" className="btn btn-ghost btn-sm mt-4">
+          <ShieldAlert className="h-3.5 w-3.5 text-warn" /> Ризикові компанії
+        </Link>
       </div>
 
       <div className="mt-6">
@@ -133,7 +136,7 @@ export default async function CompaniesPage({
                   {c.risk_level !== "low" && (
                     <span
                       className={`badge ${
-                        c.risk_level === "high" ? "badge-unsuccessful" : "badge-active"
+                        c.risk_level === "high" ? "badge-cancelled" : "badge-unsuccessful"
                       }`}
                       title={`Ризик-профіль: ${c.risk_score} з 100`}
                     >

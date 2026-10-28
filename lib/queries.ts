@@ -811,6 +811,92 @@ export function getAmkuViolations(edrpou: string, limit = 4): AmkuViolation[] {
   }
 }
 
+export function getRiskOverview(): {
+  high: number;
+  medium: number;
+  highAmount: number;
+  suppliers: number;
+} {
+  try {
+    const db = getDb();
+    const rows = db
+      .prepare(
+        `SELECT risk_level, COUNT(*) AS n, COALESCE(SUM(total), 0) AS amount
+         FROM companies WHERE kind IN ('supplier','both') GROUP BY risk_level`,
+      )
+      .all() as unknown as { risk_level: string; n: number; amount: number }[];
+    const map = new Map(rows.map((r) => [r.risk_level, r]));
+    const suppliers = rows.reduce((sum, r) => sum + r.n, 0);
+    return {
+      high: map.get("high")?.n || 0,
+      medium: map.get("medium")?.n || 0,
+      highAmount: map.get("high")?.amount || 0,
+      suppliers,
+    };
+  } catch {
+    return { high: 0, medium: 0, highAmount: 0, suppliers: 0 };
+  }
+}
+
+export function searchRiskCompanies(opts: {
+  q?: string;
+  risk?: string;
+  region?: string;
+  cpv?: string;
+  minWins?: number;
+  page?: number;
+  perPage?: number;
+}): { rows: CompanyRow[]; total: number; page: number; pages: number } {
+  try {
+    const db = getDb();
+    const page = Math.max(1, opts.page || 1);
+    const perPage = Math.min(100, Math.max(1, opts.perPage || 30));
+    const where: string[] = ["c.kind IN ('supplier','both')", "c.risk_level IN ('high','medium')"];
+    const params: (string | number)[] = [];
+    if (opts.risk === "high" || opts.risk === "medium") {
+      where[1] = "c.risk_level = ?";
+      params.push(opts.risk);
+    }
+    if (opts.q) {
+      where.push("c.search_text LIKE ?");
+      params.push(`%${opts.q.trim().toLowerCase()}%`);
+    }
+    if (opts.minWins && opts.minWins > 0) {
+      where.push("c.wins >= ?");
+      params.push(opts.minWins);
+    }
+    if (opts.region) {
+      where.push(
+        `EXISTS (SELECT 1 FROM participations p JOIN tenders t ON t.id = p.tender_id
+          WHERE p.edrpou = c.edrpou AND t.buyer_region = ?)`,
+      );
+      params.push(opts.region);
+    }
+    if (opts.cpv) {
+      where.push(
+        `EXISTS (SELECT 1 FROM participations p JOIN tenders t ON t.id = p.tender_id
+          WHERE p.edrpou = c.edrpou AND t.cpv_section = ?)`,
+      );
+      params.push(opts.cpv);
+    }
+    const sql = where.join(" AND ");
+    const total = (
+      db.prepare(`SELECT COUNT(*) AS n FROM companies c WHERE ${sql}`).get(...params) as {
+        n: number;
+      }
+    ).n;
+    const rows = db
+      .prepare(
+        `SELECT c.* FROM companies c WHERE ${sql}
+         ORDER BY c.risk_score DESC, c.total DESC LIMIT ? OFFSET ?`,
+      )
+      .all(...params, perPage, (page - 1) * perPage) as unknown as CompanyRow[];
+    return { rows, total, page, pages: Math.max(1, Math.ceil(total / perPage)) };
+  } catch {
+    return { rows: [], total: 0, page: 1, pages: 1 };
+  }
+}
+
 export function getSyncInfo(): { lastSeed: string | null; count: number } {  try {
     const db = getDb();
     const seed = db.prepare(`SELECT value FROM sync_state WHERE key = 'last_seed'`).get() as

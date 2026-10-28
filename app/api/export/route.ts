@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import * as XLSX from "xlsx";
-import { getAnalytics, searchTenders } from "@/lib/queries";
+import { getAnalytics, searchRiskCompanies, searchTenders } from "@/lib/queries";
 import { siteUrl } from "@/lib/site";
 import { parseFilters, type RawParams } from "@/lib/params";
 import { formatDate, methodLabel, statusMeta } from "@/lib/format";
@@ -61,6 +61,64 @@ export async function GET(request: Request) {
       headers: {
         "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         "Content-Disposition": `attachment; filename="vidkryto-analytics-${stamp}.xlsx"`,
+      },
+    });
+  }
+
+  if (type === "risk") {
+    const data = searchRiskCompanies({
+      q: searchParams.get("q") || undefined,
+      risk: searchParams.get("risk") || undefined,
+      region: searchParams.get("region") || undefined,
+      cpv: searchParams.get("cpv") || undefined,
+      minWins: Number(searchParams.get("minWins") || 0) || undefined,
+      page: 1,
+      perPage: 5000,
+    });
+    const rows = data.rows.map((c) => {
+      let factors: { label: string; value: string }[] = [];
+      try {
+        factors = JSON.parse(c.risk_factors_json || "[]");
+      } catch {
+        factors = [];
+      }
+      return {
+        "ЄДРПОУ": c.edrpou,
+        Компанія: c.name,
+        "Ризик, бали": c.risk_score,
+        "Рівень ризику": c.risk_level,
+        Фактори: factors.map((f) => f.label).join("; "),
+        Перемог: c.wins,
+        "Сума перемог, ₴": c.total,
+        Регіонів: c.regions,
+        "Категорій КПВ": c.cpvs,
+        "Остання активність": formatDate(c.last_date),
+      };
+    });
+    if (format === "xlsx") {
+      const ws = XLSX.utils.json_to_sheet(rows);
+      ws["!cols"] = [{ wch: 12 }, { wch: 52 }, { wch: 12 }, { wch: 14 }, { wch: 46 }, { wch: 9 }, { wch: 16 }, { wch: 9 }, { wch: 12 }, { wch: 16 }];
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Ризики");
+      const buf = XLSX.write(wb, { type: "buffer", bookType: "xlsx" }) as Buffer;
+      return new NextResponse(new Uint8Array(buf), {
+        headers: {
+          "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          "Content-Disposition": `attachment; filename="vidkryto-risk-${stamp}.xlsx"`,
+        },
+      });
+    }
+    const headers = Object.keys(rows[0] || { "ЄДРПОУ": "" });
+    const csv = [
+      headers.join(";"),
+      ...rows.map((row) =>
+        headers.map((h) => String((row as Record<string, unknown>)[h] ?? "").replace(/;/g, ",")).join(";"),
+      ),
+    ].join("\r\n");
+    return new NextResponse("\uFEFF" + csv, {
+      headers: {
+        "Content-Type": "text/csv; charset=utf-8",
+        "Content-Disposition": `attachment; filename="vidkryto-risk-${stamp}.csv"`,
       },
     });
   }
