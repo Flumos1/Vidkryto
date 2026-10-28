@@ -1,0 +1,16 @@
+services:
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      DB_FILE: /data/clarity.db
+      SEED_DB: /app/data/seed.db
+      AUTH_SECRET: ${AUTH_SECRET:-change-me-in-production}
+      SITE_URL: ${SITE_URL:-http://localhost:3000}
+    volumes:
+      - vidkryto-data:/data
+    restart: unless-stopped
+
+volumes:
+  vidkryto-data:

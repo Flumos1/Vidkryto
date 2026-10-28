@@ -1,0 +1,12 @@
+node_modules
+.next
+.git
+.gitignore
+dist
+docs
+data/clarity.db
+data/clarity.db-shm
+data/clarity.db-wal
+*.png
+tsconfig.tsbuildinfo
+.env*

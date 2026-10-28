@@ -96,6 +96,44 @@ data/clarity.db      SQLite-знімок (створюється сідом)
 
 Повний сайт на VPS: `npm ci && npm run seed && npm run build && npm start`.
 
+## Постійна база даних (Railway / Render / Docker / VPS)
+
+Netlify та інші serverless-платформи не дають постійного диска. Для повноцінної
+роботи з реєстрацією, підписками та синхронізацією розгорніть застосунок там,
+де є volume.
+
+### Railway
+
+1. Створіть проєкт з GitHub-репозиторію `Flumos1/Vidkryto`.
+2. Додайте volume з mount path `/data`.
+3. Змінні: `DB_FILE=/data/clarity.db`, `AUTH_SECRET=<довгий випадковий рядок>`.
+4. Build/start беруться з `railway.toml`; перший запуск скопіює знімок у volume.
+
+### Render
+
+Імпортуйте репозиторій — `render.yaml` створить web-сервіс із диском 1 GB,
+змінними `DB_FILE=/data/clarity.db` та згенерованим `AUTH_SECRET`.
+
+### Docker / VPS
+
+```bash
+docker compose up -d --build
+```
+
+або без Docker на сервері:
+
+```bash
+npm install
+node scripts/assemble-db.mjs
+npm run build
+DB_FILE=/var/lib/vidkryto/clarity.db node scripts/init-db.mjs
+DB_FILE=/var/lib/vidkryto/clarity.db PORT=3000 npm start
+```
+
+Health-check: `GET /api/health` повертає кількість закупівель, компаній і дату
+знімка. Резервна копія — файл `clarity.db` (зупиніть застосунок або виконайте
+`sqlite3 clarity.db ".backup backup.db"`).
+
 ## Дані та обмеження
 
 - Безкоштовний API ProZorro не підтримує фільтри за датами, тому знімок формується з

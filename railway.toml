@@ -1,0 +1,10 @@
+[build]
+  builder = "NIXPACKS"
+  buildCommand = "node scripts/assemble-db.mjs && npm run build"
+
+[deploy]
+  startCommand = "node scripts/init-db.mjs && npm start"
+  healthcheckPath = "/api/health"
+  healthcheckTimeout = 120
+  restartPolicyType = "ON_FAILURE"
+  restartPolicyMaxRetries = 5

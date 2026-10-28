@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: vidkryto
+    runtime: node
+    plan: starter
+    buildCommand: node scripts/assemble-db.mjs && npm run build
+    startCommand: node scripts/init-db.mjs && npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: DB_FILE
+        value: /data/clarity.db
+      - key: AUTH_SECRET
+        generateValue: true
+      - key: NODE_VERSION
+        value: 22.18.0
+    disk:
+      name: data
+      mountPath: /data
+      sizeGB: 1
