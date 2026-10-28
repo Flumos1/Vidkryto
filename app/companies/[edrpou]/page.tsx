@@ -325,6 +325,9 @@ export default async function CompanyPage({ params }: { params: Promise<{ edrpou
                     )}
                   </div>
                 ))}
+                <p className="text-[10px] leading-relaxed text-muted-2">
+                  Рішення може бути оскаржене в суді — перевіряйте судовий статус.
+                </p>
               </div>
             ) : (
               <p className="mt-3 text-[12px] leading-relaxed text-muted">
