@@ -10,6 +10,9 @@
 [[plugins]]
   package = "@netlify/plugin-nextjs"
 
+[functions]
+  included_files = ["data/clarity.db"]
+
 [[headers]]
   for = "/_next/static/*"
   [headers.values]
