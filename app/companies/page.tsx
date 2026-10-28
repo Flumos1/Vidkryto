@@ -21,14 +21,16 @@ export default async function CompaniesPage({
   const sp = await searchParams;
   const q = first(sp.q) || "";
   const kind = first(sp.kind) || "all";
+  const risk = first(sp.risk) || "";
   const sort = first(sp.sort) || "tenders";
   const page = Math.max(1, Number(first(sp.page) || 1) || 1);
-  const data = searchCompanies({ q, kind, sort, page, perPage: 24 });
+  const data = searchCompanies({ q, kind, risk, sort, page, perPage: 24 });
 
   const makeHref = (patch: Record<string, string | undefined>) => {
     const p = new URLSearchParams();
     if (q) p.set("q", q);
     if (kind !== "all") p.set("kind", kind);
+    if (risk) p.set("risk", risk);
     if (sort !== "tenders") p.set("sort", sort);
     for (const [k, v] of Object.entries(patch)) {
       if (v === undefined) p.delete(k);
@@ -62,6 +64,23 @@ export default async function CompaniesPage({
         <Suspense fallback={<div className="h-12 rounded-xl bg-panel-2" />}>
           <CompanySearch q={q} kind={kind} sort={sort} />
         </Suspense>
+      </div>
+
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        <Link href={makeHref({ risk: undefined })} className="chip" data-active={!risk}>
+          Усі компанії
+        </Link>
+        <Link href={makeHref({ risk: "high" })} className="chip" data-active={risk === "high"}>
+          Високий ризик
+        </Link>
+        <Link href={makeHref({ risk: "medium" })} className="chip" data-active={risk === "medium"}>
+          Середній ризик
+        </Link>
+        {risk && (
+          <span className="text-[10.5px] text-muted-2">
+            Фільтр за ризик-профілем (санкції, АМКУ, концентрація, ціна)
+          </span>
+        )}
       </div>
 
       <div className="mt-6 flex items-center justify-between">
@@ -110,7 +129,19 @@ export default async function CompaniesPage({
                   </p>
                   <p className="mono mt-1 text-[10.5px] text-muted-2">ЄДРПОУ {c.edrpou}</p>
                 </div>
-                <ArrowUpRight className="h-4 w-4 shrink-0 text-muted-2 transition-colors group-hover:text-accent" />
+                <div className="flex shrink-0 items-center gap-1.5">
+                  {c.risk_level !== "low" && (
+                    <span
+                      className={`badge ${
+                        c.risk_level === "high" ? "badge-unsuccessful" : "badge-active"
+                      }`}
+                      title={`Ризик-профіль: ${c.risk_score} з 100`}
+                    >
+                      ризик {c.risk_score}
+                    </span>
+                  )}
+                  <ArrowUpRight className="h-4 w-4 text-muted-2 transition-colors group-hover:text-accent" />
+                </div>
               </div>
 
               <div className="mt-4 grid grid-cols-3 gap-2 border-t border-line pt-3">

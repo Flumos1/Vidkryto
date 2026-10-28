@@ -337,12 +337,16 @@ export type CompanyRow = {
   last_date: string | null;
   regions: number;
   cpvs: number;
+  risk_score: number;
+  risk_level: string;
+  risk_factors_json: string | null;
   search_text?: string;
 };
 
 export function searchCompanies(opts: {
   q?: string;
   kind?: string;
+  risk?: string;
   sort?: string;
   page?: number;
   perPage?: number;
@@ -366,6 +370,10 @@ export function searchCompanies(opts: {
         params.push(opts.kind);
       }
     }
+    if (opts.risk === "high" || opts.risk === "medium" || opts.risk === "low") {
+      where.push("risk_level = ?");
+      params.push(opts.risk);
+    }
     const order =
       opts.sort === "wins"
         ? "wins DESC, tenders DESC"
@@ -373,7 +381,9 @@ export function searchCompanies(opts: {
           ? "total DESC"
           : opts.sort === "name"
             ? "name ASC"
-            : "tenders DESC, total DESC";
+            : opts.sort === "risk"
+              ? "risk_score DESC, tenders DESC"
+              : "tenders DESC, total DESC";
     const sql = where.join(" AND ");
     const total = (
       db.prepare(`SELECT COUNT(*) AS n FROM companies WHERE ${sql}`).get(...params) as {

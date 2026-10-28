@@ -142,7 +142,10 @@ CREATE TABLE IF NOT EXISTS companies (
   regions TEXT,
   cpvs TEXT,
   search_text TEXT,
-  buyer_total REAL DEFAULT 0
+  buyer_total REAL DEFAULT 0,
+  risk_score INTEGER DEFAULT 0,
+  risk_level TEXT DEFAULT 'low',
+  risk_factors_json TEXT
 );
 `);
 

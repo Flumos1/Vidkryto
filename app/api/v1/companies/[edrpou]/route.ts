@@ -34,6 +34,15 @@ export async function GET(request: Request, { params }: { params: Promise<{ edrp
         regions: company.regions,
         cpv_categories: company.cpvs,
         win_rate: company.tenders ? (company.wins / company.tenders) * 100 : 0,
+        risk_score: company.risk_score,
+        risk_level: company.risk_level,
+        risk_factors: (() => {
+          try {
+            return JSON.parse(company.risk_factors_json || "[]");
+          } catch {
+            return [];
+          }
+        })(),
       },
       cpv_breakdown: cpv.map((c) => ({ section: c.code, count: c.count, amount: c.amount })),
       top_buyers: counterparties,

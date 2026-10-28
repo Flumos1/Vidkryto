@@ -81,6 +81,7 @@ export function CompanySearch({
           <option value="tenders">За активністю</option>
           <option value="amount">За сумою</option>
           <option value="wins">За перемогами</option>
+          <option value="risk">За ризиком</option>
           <option value="name">За назвою</option>
         </select>
         <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />

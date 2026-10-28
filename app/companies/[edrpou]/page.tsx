@@ -33,6 +33,7 @@ import {
 } from "@/lib/format";
 import { CopyButton } from "@/components/copy-button";
 import { StatusBadge } from "@/components/status-badge";
+import { RiskGauge } from "@/components/risk-gauge";
 
 export const dynamic = "force-dynamic";
 
@@ -62,6 +63,25 @@ export default async function CompanyPage({ params }: { params: Promise<{ edrpou
   const sanctionsStats = getSanctionsStats();
   const amku = getAmkuViolations(company.edrpou);
   const amkuStats = getAmkuStats();
+  const riskFactors: { label: string; value: string; points: number; tone?: string }[] = (() => {
+    try {
+      return JSON.parse(company.risk_factors_json || "[]");
+    } catch {
+      return [];
+    }
+  })();
+  const riskLabel =
+    company.risk_level === "high"
+      ? "Високий"
+      : company.risk_level === "medium"
+        ? "Середній"
+        : "Низький";
+  const riskTone =
+    company.risk_level === "high"
+      ? "border-danger/40 bg-danger-soft"
+      : company.risk_level === "medium"
+        ? "border-warn/40 bg-warn-soft"
+        : "border-line bg-panel";
   const winRate = company.tenders ? (company.wins / company.tenders) * 100 : 0;
   const maxCpv = Math.max(1, ...cpv.map((c) => c.amount));
 
@@ -195,6 +215,46 @@ export default async function CompanyPage({ params }: { params: Promise<{ edrpou
         </div>
 
         <aside className="space-y-4">
+          {company.kind !== "buyer" && (
+            <div className={`rounded-2xl border p-5 ${riskTone}`}>
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="eyebrow">Ризик-профіль</p>
+                  <p className="mt-2 text-[14px] font-semibold">{riskLabel} ризик</p>
+                  <p className="mt-1 text-[10.5px] text-muted">
+                    Оцінка за відкритими даними ProZorro та АМКУ
+                  </p>
+                </div>
+                <RiskGauge score={company.risk_score || 0} level={company.risk_level || "low"} />
+              </div>
+
+              <div className="mt-4 space-y-2 border-t border-line pt-4">
+                {riskFactors.length === 0 ? (
+                  <p className="text-[11.5px] leading-relaxed text-muted">
+                    Суттєвих факторів не виявлено.
+                  </p>
+                ) : (
+                  riskFactors.map((factor) => (
+                    <div key={factor.label} className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="text-[11.5px] font-semibold text-ink-soft">{factor.label}</p>
+                        <p className="text-[10px] text-muted">{factor.value}</p>
+                      </div>
+                      <span className="mono shrink-0 rounded bg-panel/60 px-1.5 py-0.5 text-[10px] font-semibold text-warn">
+                        +{factor.points}
+                      </span>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              <p className="mt-3 text-[9.5px] leading-relaxed text-muted-2">
+                Сума балів за відкритими ознаками. Не є юридичним висновком або доказом
+                порушення.
+              </p>
+            </div>
+          )}
+
           <div className="rounded-2xl border border-line bg-panel p-5">
             <p className="eyebrow">Структура за КПВ</p>
             <div className="mt-4 space-y-3">

@@ -33,6 +33,8 @@ export async function GET(request: Request) {
       total_amount: c.total,
       regions: c.regions,
       cpv_categories: c.cpvs,
+      risk_score: c.risk_score,
+      risk_level: c.risk_level,
       last_activity: c.last_date,
       url: `/companies/${c.edrpou}`,
     })),
