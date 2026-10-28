@@ -933,10 +933,10 @@ export function getDataFreshness(): DataFreshness {
     const status = ageHours < 24 ? "fresh" : ageHours < 72 ? "stale" : "old";
     const date = latest ? new Date(latest.ts) : null;
     const label = date
-      ? date.toLocaleString("uk-UA", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })
+      ? date.toLocaleString("uk-UA", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit", timeZone: "Europe/Kyiv" })
       : "—";
     const title = sources
-      .map((source) => `${source.label}: ${new Date(source.value).toLocaleString("uk-UA")}`)
+      .map((source) => `${source.label}: ${new Date(source.value).toLocaleString("uk-UA", { timeZone: "Europe/Kyiv" })}`)
       .join(" · ");
 
     return {
