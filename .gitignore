@@ -2,6 +2,9 @@
 
 # dependencies
 /node_modules
+/node_modules_old
+/node_modules_partial
+/node_modules.bak
 /.pnp
 .pnp.*
 .yarn/*
@@ -39,3 +42,8 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# local data snapshot
+/data/*.db
+/data/*.db-shm
+/data/*.db-wal
